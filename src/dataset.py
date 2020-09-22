@@ -1,3 +1,4 @@
+import torchvision.transforms as tsfm
 import numpy as np
 import os
 import cv2
@@ -28,10 +29,14 @@ class Dataset(torch.utils.data.Dataset):
                          os.listdir(self.data_folder)[index]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         ciluv_image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
-        l_image = ciluv_image[..., 0]
-        u_image = np.floor((ciluv_image[..., 1] / 256) * 50)
-        v_image = np.floor((ciluv_image[..., 2] / 256) * 50)
+        l_image = np.expand_dims(ciluv_image[..., 0], -1)
+        u_image = np.floor((ciluv_image[..., 1] / 256) * cfg.bin_no)
+        v_image = np.floor((ciluv_image[..., 2] / 256) * cfg.bin_no)
 
+        image = tsfm.ToTensor()(image)
+        l_image = tsfm.ToTensor()(l_image)
+        u_image = tsfm.ToTensor()(u_image)
+        v_image = tsfm.ToTensor()(v_image)
         return image, l_image, u_image, v_image
 
     def process_validation(self, index):

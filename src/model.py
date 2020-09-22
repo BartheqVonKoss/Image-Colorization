@@ -1,11 +1,12 @@
 from torch.utils.tensorboard import SummaryWriter
+import os
 import torch
 
 from collections import OrderedDict
 from torchsummary import summary
 
 from cfg import Configuration as cfg
-from utils import get_flatten_size, convolution, Conv2D
+from network_utils import get_flatten_size, convolution, Conv2D
 
 
 class Network(torch.nn.Module):
@@ -194,7 +195,7 @@ class Network(torch.nn.Module):
 
 def test_network(model):
 
-    writer = SummaryWriter(cfg.work_dir, 'model')
+    writer = SummaryWriter(os.path.join(cfg.work_dir, 'model'))
     model = model.to('cuda')
     print(summary(model, (1, cfg.HEIGHT, cfg.WIDTH)))
     input_ = torch.randn((2, 1, cfg.HEIGHT, cfg.WIDTH)).to('cuda')

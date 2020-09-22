@@ -8,6 +8,10 @@ class Configuration:
     HEIGHT = 256
     WIDTH = 256
     div = 1  # value by which the model is smaller than the one in the paper / 4 for same network
+    bin_no = 50
+    EPOCHS = 2
+    batch_size = 8
     batch_normalization = True
     bias = True
+    lr = 1e-4
 
