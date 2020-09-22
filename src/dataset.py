@@ -5,15 +5,22 @@ import cv2
 
 from cfg import Configuration as cfg
 import torch
+from image_utils import RandomHorizontalFlip, RandomVerticalFlip, ToTensor
 
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, dataset_type: str):
         self.dataset_type = dataset_type
         self.data_folder = cfg.training_folder if self.dataset_type == 'training' else cfg.validation_folder
+        self.training_transforms = tsfm.Compose([
+            RandomHorizontalFlip(),
+            RandomVerticalFlip(),
+            ToTensor(),
+        ])
 
     def __len__(self):
-        return len(os.listdir(self.data_folder))
+        return 2 * cfg.batch_size if cfg.just_testing else len(
+            os.listdir(self.data_folder))
 
     def __getitem__(self, index):
         if self.dataset_type == 'training':
@@ -30,13 +37,15 @@ class Dataset(torch.utils.data.Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         ciluv_image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
         l_image = np.expand_dims(ciluv_image[..., 0], -1)
-        u_image = np.floor((ciluv_image[..., 1] / 256) * cfg.bin_no)
-        v_image = np.floor((ciluv_image[..., 2] / 256) * cfg.bin_no)
+        u_image = np.floor(
+            (ciluv_image[..., 1] / 256) * cfg.bin_no)  #.astype('uint8')
+        v_image = np.floor(
+            (ciluv_image[..., 2] / 256) * cfg.bin_no)  #.astype('uint8')
 
-        image = tsfm.ToTensor()(image)
-        l_image = tsfm.ToTensor()(l_image)
-        u_image = tsfm.ToTensor()(u_image)
-        v_image = tsfm.ToTensor()(v_image)
+        image = self.training_transforms(image)
+        l_image = self.training_transforms(l_image)
+        u_image = self.training_transforms(u_image)
+        v_image = self.training_transforms(v_image)
         return image, l_image, u_image, v_image
 
     def process_validation(self, index):
@@ -44,7 +53,9 @@ class Dataset(torch.utils.data.Dataset):
             os.path.join(self.data_folder,
                          os.listdir(self.data_folder)[index]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        bw_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        bw_image = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), -1)
+        image = tsfm.ToTensor()(image)
+        bw_image = tsfm.ToTensor()(bw_image)
 
         return image, bw_image
 

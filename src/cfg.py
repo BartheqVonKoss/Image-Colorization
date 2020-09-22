@@ -7,11 +7,13 @@ class Configuration:
 
     HEIGHT = 256
     WIDTH = 256
-    div = 1  # value by which the model is smaller than the one in the paper / 4 for same network
+    div = 0.5  # value by which the model is smaller than the one in the paper / 4 for same network
     bin_no = 50
-    EPOCHS = 2
-    batch_size = 8
+    EPOCHS = 250
+    batch_size = 16
     batch_normalization = True
-    bias = True
-    lr = 1e-4
+    bias = False
+    lr = 2e-4
+    REG_COEF = 1e-4
+    just_testing = True
 
