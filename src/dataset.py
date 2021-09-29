@@ -3,15 +3,15 @@ import numpy as np
 import os
 import cv2
 
-from cfg import Configuration as cfg
 import torch
-from image_utils import RandomHorizontalFlip, RandomVerticalFlip, ToTensor
+from src.utils.image_utils import RandomHorizontalFlip, RandomVerticalFlip, ToTensor
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_type: str):
+    def __init__(self, dataset_type: str, config):
+        self.config = config
         self.dataset_type = dataset_type
-        self.data_folder = cfg.training_folder if self.dataset_type == 'training' else cfg.validation_folder
+        self.data_folder = self.config.training_folder if self.dataset_type == 'training' else self.config.validation_folder
         self.training_transforms = tsfm.Compose([
             RandomHorizontalFlip(),
             RandomVerticalFlip(),
@@ -19,7 +19,7 @@ class Dataset(torch.utils.data.Dataset):
         ])
 
     def __len__(self):
-        return 2 * cfg.batch_size if cfg.just_testing else len(
+        return 2 * self.config.batch_size if self.config.just_testing else len(
             os.listdir(self.data_folder))
 
     def __getitem__(self, index):
@@ -34,13 +34,16 @@ class Dataset(torch.utils.data.Dataset):
         image = cv2.imread(
             os.path.join(self.data_folder,
                          os.listdir(self.data_folder)[index]))
+        if image.shape[:2] != (self.config.HEIGHT, self.config.WIDTH):
+            image = cv2.resize(image, (self.config.HEIGHT, self.config.WIDTH),
+                               interpolation=cv2.INTER_AREA)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         ciluv_image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
         l_image = np.expand_dims(ciluv_image[..., 0], -1)
-        u_image = np.floor(
-            (ciluv_image[..., 1] / 256) * cfg.bin_no)  #.astype('uint8')
-        v_image = np.floor(
-            (ciluv_image[..., 2] / 256) * cfg.bin_no)  #.astype('uint8')
+        u_image = np.floor((ciluv_image[..., 1] / 256) *
+                           self.config.bin_no)  #.astype('uint8')
+        v_image = np.floor((ciluv_image[..., 2] / 256) *
+                           self.config.bin_no)  #.astype('uint8')
 
         image = self.training_transforms(image)
         l_image = self.training_transforms(l_image)
@@ -52,6 +55,9 @@ class Dataset(torch.utils.data.Dataset):
         image = cv2.imread(
             os.path.join(self.data_folder,
                          os.listdir(self.data_folder)[index]))
+        if image.shape[:2] != (self.config.HEIGHT, self.config.WIDTH):
+            image = cv2.resize(image, (self.config.HEIGHT, self.config.WIDTH),
+                               interpolation=cv2.INTER_AREA)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         bw_image = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), -1)
         image = tsfm.ToTensor()(image)

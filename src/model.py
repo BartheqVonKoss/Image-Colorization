@@ -5,14 +5,14 @@ import torch
 from collections import OrderedDict
 from torchsummary import summary
 
-from cfg import Configuration as cfg
-from network_utils import get_flatten_size, convolution, Conv2D
+from src.utils.network_utils import get_flatten_size, convolution, Conv2D
 
 
 class Network(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super(Network, self).__init__()
 
+        self.config = config
         self.module_1 = []
         self.module_2 = []
         self.module_3 = []
@@ -21,85 +21,85 @@ class Network(torch.nn.Module):
 
         self.module_1 += convolution(
             in_channels=1,
-            out_channels=int(cfg.div * 16),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            out_channels=int(self.config.div * 16),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_1 += convolution(
-            in_channels=int(cfg.div * 16),
-            out_channels=int(cfg.div * 16),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 16),
+            out_channels=int(self.config.div * 16),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
 
         self.module_2 += convolution(
-            in_channels=int(cfg.div * 16),
-            out_channels=int(cfg.div * 32),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 16),
+            out_channels=int(self.config.div * 32),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_2 += convolution(
-            in_channels=int(cfg.div * 32),
-            out_channels=int(cfg.div * 32),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 32),
+            out_channels=int(self.config.div * 32),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
 
         self.module_3 += convolution(
-            in_channels=int(cfg.div * 32),
-            out_channels=int(cfg.div * 64),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 32),
+            out_channels=int(self.config.div * 64),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_3 += convolution(
-            in_channels=int(cfg.div * 64),
-            out_channels=int(cfg.div * 64),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 64),
+            out_channels=int(self.config.div * 64),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_3 += convolution(
-            in_channels=int(cfg.div * 64),
-            out_channels=int(cfg.div * 64),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 64),
+            out_channels=int(self.config.div * 64),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
 
         self.module_4 += convolution(
-            in_channels=int(cfg.div * 64),
-            out_channels=int(cfg.div * 128),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 64),
+            out_channels=int(self.config.div * 128),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_4 += convolution(
-            in_channels=int(cfg.div * 128),
-            out_channels=int(cfg.div * 128),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 128),
+            out_channels=int(self.config.div * 128),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_4 += convolution(
-            in_channels=int(cfg.div * 128),
-            out_channels=int(cfg.div * 128),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 128),
+            out_channels=int(self.config.div * 128),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
 
         self.module_5 += convolution(
-            in_channels=int(cfg.div * 128),
-            out_channels=int(cfg.div * 64),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 128),
+            out_channels=int(self.config.div * 64),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_5 += convolution(
-            in_channels=int(cfg.div * 64),
-            out_channels=int(cfg.div * 16),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 64),
+            out_channels=int(self.config.div * 16),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.module_5 += convolution(
-            in_channels=int(cfg.div * 16),
-            out_channels=int(cfg.div * 16),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 16),
+            out_channels=int(self.config.div * 16),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
 
         self.module_1 = torch.nn.Sequential(*self.module_1)
@@ -109,29 +109,29 @@ class Network(torch.nn.Module):
         self.module_5 = torch.nn.Sequential(*self.module_5)
 
         self.conv_2 = Conv2D(
-            in_channels=int(cfg.div * 32),
-            out_channels=int(cfg.div * 16),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 32),
+            out_channels=int(self.config.div * 16),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
 
         self.conv_3 = Conv2D(
-            in_channels=int(cfg.div * 64),
-            out_channels=int(cfg.div * 32),
-            batch_normalization=cfg.batch_normalization,
-            bias=cfg.bias,
+            in_channels=int(self.config.div * 64),
+            out_channels=int(self.config.div * 32),
+            batch_normalization=self.config.batch_normalization,
+            bias=self.config.bias,
         )
         self.conv_4 = Conv2D(
-            in_channels=int(cfg.div * 128),
-            out_channels=int(cfg.div * 64),
-            batch_normalization=cfg.batch_normalization,
+            in_channels=int(self.config.div * 128),
+            out_channels=int(self.config.div * 64),
+            batch_normalization=self.config.batch_normalization,
             kernel_size=1,
-            bias=cfg.bias,
+            bias=self.config.bias,
             stride=1,
         )
 
         self.conv_final_U = Conv2D(
-            in_channels=int(cfg.div * 16),
+            in_channels=int(self.config.div * 16),
             out_channels=50,
             batch_normalization=False,
             bias=False,
@@ -140,7 +140,7 @@ class Network(torch.nn.Module):
         )
 
         self.conv_final_V = Conv2D(
-            in_channels=int(cfg.div * 16),
+            in_channels=int(self.config.div * 16),
             out_channels=50,
             batch_normalization=False,
             bias=False,
@@ -195,10 +195,10 @@ class Network(torch.nn.Module):
 
 def test_network(model):
 
-    writer = SummaryWriter(os.path.join(cfg.work_dir, 'model'))
+    writer = SummaryWriter(os.path.join(self.config.work_dir, 'model'))
     model = model.to('cuda')
-    print(summary(model, (1, cfg.HEIGHT, cfg.WIDTH)))
-    input_ = torch.randn((2, 1, cfg.HEIGHT, cfg.WIDTH)).to('cuda')
+    print(summary(model, (1, self.config.HEIGHT, self.config.WIDTH)))
+    input_ = torch.randn((2, 1, self.config.HEIGHT, self.config.WIDTH)).to('cuda')
     print(model(input_)[0].size())
     print(model(input_)[1].size())
     writer.add_graph(model, input_)
