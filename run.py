@@ -17,12 +17,21 @@ def main():
         help='test session will load less images',
         action='store_true',
     )
+    parser.add_argument(
+        '--model_path',
+        help='path to checkpoint to be restarted from',
+        default=None,
+    )
     args = parser.parse_args()
     config.just_testing = args.test_session
     if os.path.exists(os.path.join(config.work_dir, args.project_name)):
         shutil.rmtree(os.path.join(config.work_dir, args.project_name))
 
-    trainer = Train(config=config, name=args.project_name)
+    trainer = Train(
+        config=config,
+        name=args.project_name,
+        model_path=args.model_path,
+    )
     trainer()
 
 
