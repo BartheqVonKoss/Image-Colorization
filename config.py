@@ -4,8 +4,8 @@ class Configuration:
     validation_folder = 'data/validation_imgs/'
     work_dir = 'work_dir/'
 
-    HEIGHT = 256
-    WIDTH = 256
+    HEIGHT = 128
+    WIDTH = 128
     div = 0.5  # value by which the model is smaller than the one in the paper / 4 for same network
     bin_no = 50
     EPOCHS = 250
@@ -14,4 +14,4 @@ class Configuration:
     bias = True
     lr = 1e-3
     REG_COEF = 0
-    just_testing = False
+    just_testing = True

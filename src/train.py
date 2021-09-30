@@ -81,7 +81,7 @@ class Train:
                 loss.backward()
                 self.optimizer.step()
 
-            if epoch % 10 == 0:
+            if epoch % 2 == 0:
                 show_training_summaries(
                     self.writer,
                     image,

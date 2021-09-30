@@ -71,7 +71,7 @@ def show_training_summaries(writer, images, l_images, u_images, v_images,
 
 
 def unbin(image: torch.Tensor):
-    tensor = torch.floor(image * 256 / float(BIN_NO))
+    tensor = torch.floor(image * 255 / float(BIN_NO))
     np_form = tensor.detach().cpu().numpy()
     return tensor, np_form
 
@@ -85,9 +85,9 @@ def luv_to_rgb(image_l: torch.Tensor, image_u: torch.Tensor,
     image_v = unbin(image_v)[1]
 
     combined = np.concatenate((image_l, image_u, image_v), axis=1)
-    combined = np.transpose(combined, axes=(0, 2, 3, 1)) / 255.
+    combined = np.transpose(combined, axes=(0, 2, 3, 1))# / 255.
     transformed = [
-        cv2.cvtColor(combined_, cv2.COLOR_LUV2RGB)
+        cv2.cvtColor(combined_, cv2.COLOR_LUV2LRGB)
         for combined_ in combined.astype('uint8')
     ]
     transformed = np.stack(transformed)

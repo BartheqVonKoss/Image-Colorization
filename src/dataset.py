@@ -13,8 +13,8 @@ class Dataset(torch.utils.data.Dataset):
         self.dataset_type = dataset_type
         self.data_folder = self.config.training_folder if self.dataset_type == 'training' else self.config.validation_folder
         self.training_transforms = tsfm.Compose([
-            RandomHorizontalFlip(),
-            RandomVerticalFlip(),
+            # RandomHorizontalFlip(),
+            # RandomVerticalFlip(),
             ToTensor(),
         ])
 
@@ -40,9 +40,9 @@ class Dataset(torch.utils.data.Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         ciluv_image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
         l_image = np.expand_dims(ciluv_image[..., 0], -1)
-        u_image = np.floor((ciluv_image[..., 1] / 256) *
+        u_image = np.floor((ciluv_image[..., 1] / 255) *
                            self.config.bin_no)  #.astype('uint8')
-        v_image = np.floor((ciluv_image[..., 2] / 256) *
+        v_image = np.floor((ciluv_image[..., 2] / 255) *
                            self.config.bin_no)  #.astype('uint8')
 
         image = self.training_transforms(image)
