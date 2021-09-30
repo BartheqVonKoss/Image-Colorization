@@ -31,7 +31,6 @@ def main():
         config=config,
         name=args.project_name,
         model_path=args.model_path,
-        limit=1,
     )
     trainer()
 

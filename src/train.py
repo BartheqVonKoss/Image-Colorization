@@ -21,7 +21,6 @@ class Train:
             name: str,
             device=torch.device('cuda'),
             model_path: str = None,
-            limit=None,
     ):
 
         self.name = name
@@ -39,11 +38,6 @@ class Train:
         self.training_dataset = Dataset(dataset_type='training', config=config)
         self.validation_dataset = Dataset(dataset_type='validation',
                                           config=config)
-        if limit is not None:
-            self.training_dataset = self.training_dataset[:limit *
-                                                          config.batch_size]
-            self.validation_dataset = self.validation_dataset[:limit * config.
-                                                              batch_size]
 
         self.training_dataloader = torch.utils.data.DataLoader(
             self.training_dataset,

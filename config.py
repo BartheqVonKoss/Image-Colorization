@@ -14,4 +14,4 @@ class Configuration:
     bias = True
     lr = 1e-3
     REG_COEF = 0
-    just_testing = True
+    just_testing = False
