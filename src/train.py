@@ -20,11 +20,17 @@ class Train:
             config,
             name: str,
             device=torch.device('cuda'),
+            model_path: str = None,
+            limit=None,
     ):
+
         self.name = name
         self.config = config
         self.device = device
         self.model = Network(config).to(self.device)
+        if model_path is not None:
+            chckpt = torch.load(model_path)
+            self.model.load_state_dict(chckpt)
         self.optimizer = torch.optim.Adam(self.model.parameters(),
                                           lr=self.config.lr)
         self.writer = SummaryWriter(
@@ -33,6 +39,11 @@ class Train:
         self.training_dataset = Dataset(dataset_type='training', config=config)
         self.validation_dataset = Dataset(dataset_type='validation',
                                           config=config)
+        if limit is not None:
+            self.training_dataset = self.training_dataset[:limit *
+                                                          config.batch_size]
+            self.validation_dataset = self.validation_dataset[:limit * config.
+                                                              batch_size]
 
         self.training_dataloader = torch.utils.data.DataLoader(
             self.training_dataset,
@@ -136,9 +147,6 @@ class Train:
                          self.name + '.pt'))
 
     def __call__(self) -> None:
-        """ Wrapper to train the network,
-        catches ctrl-c if train is stopped in the middle of the
-        execution"""
         try:
             self.fit()
         except KeyboardInterrupt:
@@ -150,192 +158,5 @@ class Train:
         # TODO migrate it or change the way of saving in general
         if not os.path.exists(self.config.work_dir):
             os.makedirs(self.config.work_dir)
-        print(self.name)
-        if self.name is not None:
-            torch.save(self.model.state_dict(),
-                        f"{Path(self.config.work_dir, self.name)}_model.pt")
-            # else:
-            #     torch.save(self.model.state_dict(),
-            #                os.path.join(self.config.work_dir, 'model.pt'))
-    def train_epoch(self):
-        """Perform train epoch """
-
-        self.model.train()
-        print("Train Epoch:")
-        return self._epoch(train=True, dataloader=self.train_dataloader)
-
-    def eval_epoch(self):
-        """Perform evaluation epoch """
-        self.model.eval()
-        with torch.no_grad():
-            print("Eval Epoch:")
-            return self._epoch(train=False, dataloader=self.eval_dataloader)
-
-    def test_epoch(self) -> Dict:
-        """Perform evaluation epoch """
-        self.model.eval()
-        all_outputs = None
-        all_imgs = None
-        all_bbox = None
-        all_codes = []
-        print("Test Epoch:")
-        with torch.no_grad():
-            for _, batch in enumerate(self.test_dataloader, start=1):
-                print(f"{_} / {len(self.test_dataloader)}", end='\r')
-                images = batch['img'].to(self.device)
-                barcode_boxes = batch["bbox"].to(self.device)
-                all_codes += batch["code"]
-
-                outputs = self.model(images)
-                if all_outputs is None:
-                    all_outputs = outputs
-                    all_imgs = images
-                    all_bbox = barcode_boxes
-                else:
-                    all_outputs = torch.cat((all_outputs, outputs), 0)
-                    all_imgs = torch.cat((all_imgs, images), 0)
-                    all_bbox = torch.cat((all_bbox, barcode_boxes), 0)
-
-                # break
-
-        correct_reconstructions, correct_reconstructions_crop, total_decoded = decode_outputs(
-            all_outputs, targets=all_codes, crop=all_bbox)
-
-        return {
-            "images": all_imgs,
-            "outputs": all_outputs,
-            "correct_reconstructions": correct_reconstructions,
-            "correct_reconstructions_crop": correct_reconstructions_crop,
-            "total_decoded": total_decoded,
-            "dataloader": self.test_dataloader,
-        }
-
-    def _epoch(self, train: bool,
-               dataloader: torch.utils.data.dataloader.DataLoader) -> Dict:
-        """Perform an epoch (training or evaluation run over dataloader)
-
-        Args:
-        train: bool
-            if train the gradients will be backpropagated
-        dataloader: torch.utils.data.DataLoader
-            dataloader to run calculation over
-        """
-        total_loss = 0
-        all_outputs = None
-        all_imgs = None
-        all_targets = None
-        for _, batch in enumerate(dataloader):
-            print(f"{_} / {len(dataloader)}", end='\r')
-            images, targets = batch['img'].to(
-                self.device), batch['org_img'].to(self.device)
-            outputs = self.model(images)
-            # targets are in a binned form [0, 1, 2, 3]
-            targets = (targets / 255).float()
-            # print(targets[0, :10])
-            # print(targets.squeeze().shape)
-            # print(outputs.shape)
-            # print(torch.unique(targets, return_counts=True))
-
-            # print(torch.softmax(outputs, 1).shape)
-
-            # print(torch.argmax(torch.softmax(outputs, 1), 1).shape)
-            # print(torch.unique(torch.argmax(torch.softmax(outputs, 1), 1), return_counts=True))
-            # # print(outputs.type)
-
-            loss = 1000 * self.loss_fn(outputs.squeeze(), targets.squeeze())
-            print(loss)
-            # loss = self.loss_fn(outputs, targets)
-            total_loss += loss.item()
-            if train:
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-            if all_outputs is None:
-                all_outputs = outputs
-                all_imgs = images
-                all_targets = targets
-            elif len(all_outputs) < 500 and np.random.uniform() > min(
-                    max(0.1,
-                        len(all_outputs) / 500), 0.9):
-                all_outputs = torch.cat((all_outputs, outputs), 0)
-                all_imgs = torch.cat((all_imgs, images), 0)
-                all_targets = torch.cat((all_targets, targets), 0)
-            # break
-
-        correct_reconstructions, _, _ = decode_outputs(all_outputs,
-                                                       targets=all_targets)
-
-        return {
-            "loss": total_loss,
-            "images": all_imgs,
-            "targets": all_targets,
-            "outputs": all_outputs,
-            "correct_reconstructions": correct_reconstructions,
-            "dataloader": dataloader,
-        }
-
-    def _loop(self) -> None:
-        """ perform training """
-        # have a graph written to summaries
-        self.writer.add_graph(
-            self.model,
-            next(iter(self.train_dataloader))['img'].to(self.device),
-        )
-        if self.config.work_dir:
-            if not os.path.exists(self.config.work_dir):
-                os.makedirs(self.config.work_dir)
-
-        for epoch in range(self.start_epoch, self.max_epochs):
-            self.last_epoch = epoch
-            print(f"\nEpoch {epoch}/{self.max_epochs}")
-
-            epoch_start_time = time.time()
-            train_metrics = self.train_epoch()
-            eval_metrics = self.eval_epoch()
-            test_metrics = self.test_epoch()
-            torch.save(
-                {
-                    'state_dict':
-                    self.model.state_dict(),
-                    'epoch':
-                    self.last_epoch,
-                    'test_reconstruction':
-                    test_metrics['correct_reconstructions'],
-                    'train_reconstruction':
-                    train_metrics['correct_reconstructions'],
-                    'eval_reconstruction':
-                    eval_metrics['correct_reconstructions'],
-                    'optimizer':
-                    self.optimizer.state_dict(),
-                },
-                os.path.join(
-                    self.config.work_dir,
-                    #  f"model_{self.last_epoch}.pt"))
-                    f"model.pt"))
-            print(f"\n\t train_loss: {train_metrics['loss']:.4f}, \
-                           eval_loss: {eval_metrics['loss']:.4f}")
-            if self.summaries:
-                status = [
-                    self.writer, self.train_dataloader, self.eval_dataloader,
-                    self.test_dataloader, self.last_epoch
-                ]
-                write_summaries(status, train_metrics, eval_metrics,
-                                test_metrics)
-            if self.scheduler is not None:
-                self.writer.add_scalar("Learning Rate",
-                                       self.scheduler.get_last_lr()[0], epoch)
-                self.scheduler.step()
-
-            # use if you don't want to have all the models saved but just a few
-            # self.patience_cnt = self.update_progress(
-            # [self.val_losses, self.patience, self.patience_cnt],eval_metrics['loss'])
-            # if len(self.val_losses) <= 5:
-            #     self.val_losses = np.append(self.val_losses,
-            #                                 eval_metrics['loss'])
-            # else:
-            #     self.val_losses = np.roll(self.val_losses, 1)
-            #     self.val_losses[-1] = eval_metrics['loss']
-            print(
-                f"\t epoch finished in {(time.time() - epoch_start_time):.2f}")
-
-        print("Finished Training")
+        torch.save(self.model.state_dict(),
+                   f"{Path(self.config.work_dir, self.name)}_model.pt")

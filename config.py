@@ -9,9 +9,9 @@ class Configuration:
     div = 0.5  # value by which the model is smaller than the one in the paper / 4 for same network
     bin_no = 50
     EPOCHS = 250
-    batch_size = 16
+    batch_size = 8
     batch_normalization = True
-    bias = False
-    lr = 2e-4
-    REG_COEF = 1e-4
+    bias = True
+    lr = 1e-3
+    REG_COEF = 0
     just_testing = True

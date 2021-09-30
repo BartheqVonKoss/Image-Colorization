@@ -85,7 +85,7 @@ def luv_to_rgb(image_l: torch.Tensor, image_u: torch.Tensor,
     image_v = unbin(image_v)[1]
 
     combined = np.concatenate((image_l, image_u, image_v), axis=1)
-    combined = np.transpose(combined, axes=(0, 2, 3, 1))
+    combined = np.transpose(combined, axes=(0, 2, 3, 1)) / 255.
     transformed = [
         cv2.cvtColor(combined_, cv2.COLOR_LUV2RGB)
         for combined_ in combined.astype('uint8')
